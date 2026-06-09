@@ -7,8 +7,9 @@ CREATE TABLE Producto(
   stockMinimo int ,
   fechaIngreso text,
   categoriaID int,
-FOREIGN KEY (categoriaID) references Producto
-
+  proveedorID int,
+FOREIGN KEY (categoriaID) references Categoria(codigo),
+FOREIGN KEY (proveedorID) references Proveedor(idProveedor)
 );
 
 Create Table Proveedor(
@@ -23,13 +24,17 @@ Create Table Proveedor(
 
 Create TABLE Categoria(
   codigo int PRIMARY KEY,
-  nombre text,
+  nombre text
 );
 
 
 CREATE TABLE Usuario(
+  nombre text,
+  correoElectronico text,
+  telefono text,
   dni int PRIMARY KEY,
   contrasenia text ,
   cargo char,
   usuario Text
 )
+
