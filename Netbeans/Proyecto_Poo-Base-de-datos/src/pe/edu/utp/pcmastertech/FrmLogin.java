@@ -61,7 +61,7 @@ public class FrmLogin extends JFrame {
         // Asignar el evento "Escuchador" al botón
         btnIngresar.addActionListener(new ActionListener() {
             @Override
-            public void actionPerformed(ActionEvent e) {
+//            public void actionPerformed(ActionEvent e) {
                 validarAcceso();
             }
         });

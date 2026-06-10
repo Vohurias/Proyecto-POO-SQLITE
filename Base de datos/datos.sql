@@ -69,7 +69,7 @@ INSERT INTO Producto (codigoProducto, marca, modelo, precioUnitario, cantidadSto
 INSERT INTO Usuario (nombre, correoElectronico, telefono, dni, contrasenia, cargo, usuario) VALUES
 ('Juan Pérez Gómez', 'jperez@pcmastertech.com', '987654321', 11223344, 'admin123', 'A', 'jperez_admin'),
 ('Maria Mendoza Ruiz', 'mmendoza@pcmastertech.com', '951753456', 22334455, 'tec2026', 'T', 'mmendoza_tec'),
-('Eliot Povea Velasco', 'epovea@pcmastertech.com', '963852741', 33445566, 'eliot789', 'A', 'eliot_dev'),
+('Juan Carlos De La Villa Valtazar', 'jcvilla@pcmastertech.com', '963852741', 33445566, 'jcarlos_dev', 'A', 'jcarlos_dev'),
 ('Carlos Fuentes Ortiz', 'cfuentes@pcmastertech.com', '912345678', 44556677, 'cfuentes99', 'T', 'cfuentes_tec'),
 ('Laura Torres Vega', 'ltorres@pcmastertech.com', '981276345', 55667788, 'laura123', 'T', 'ltorres_tec'),
 ('Pedro Castillo Diaz', 'pcastillo@pcmastertech.com', '999888777', 66778899, 'pedrito00', 'T', 'pcastillo_tec'),
