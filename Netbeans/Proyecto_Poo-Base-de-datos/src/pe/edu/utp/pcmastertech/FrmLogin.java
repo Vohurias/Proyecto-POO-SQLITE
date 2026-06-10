@@ -1,9 +1,3 @@
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
- */
-
-
 package pe.edu.utp.pcmastertech;
 
 import javax.swing.*;
@@ -58,10 +52,10 @@ public class FrmLogin extends JFrame {
         pnlBoton.add(btnIngresar);
         add(pnlBoton);
 
-        // Asignar el evento "Escuchador" al botón
+        // Asignar el evento "Escuchador" al botón (CORREGIDO SIN COMENTARIOS)
         btnIngresar.addActionListener(new ActionListener() {
             @Override
-//            public void actionPerformed(ActionEvent e) {
+            public void actionPerformed(ActionEvent e) {
                 validarAcceso();
             }
         });
@@ -70,7 +64,6 @@ public class FrmLogin extends JFrame {
     // Método para conectar la interfaz con la base de datos
     private void validarAcceso() {
         String usuario = txtUsuario.getText().trim();
-        // Convertimos el arreglo de caracteres del JPasswordField a String limpio
         String contrasenia = new String(txtContrasenia.getPassword()).trim();
 
         // Validación simple de campos vacíos en la UI
@@ -98,9 +91,14 @@ public class FrmLogin extends JFrame {
                     // Decodificar el tipo de cargo
                     String rol = cargo.equals("A") ? "Administrador" : "Técnico";
 
-                    JOptionPane.showMessageDialog(this, "¡Bienvenido " + nombreEmpleado + "!\nRol: " + rol, "Acceso Concedido", JOptionPane.INFORMATION_MESSAGE);
-                    
-                    // Aquí abriríamos el siguiente formulario (Inventario) en el futuro...
+                    // 1. Instanciamos la nueva ventana del Menú pasándole los datos recuperados de SQLite
+                    FrmMenu ventanaMenu = new FrmMenu(nombreEmpleado, rol);
+
+                    // 2. Hacemos visible la ventana del menú principal
+                    ventanaMenu.setVisible(true);
+
+                    // 3. Destruimos y cerramos la ventana de Login actual para liberar memoria
+                    this.dispose();
                     
                 } else {
                     JOptionPane.showMessageDialog(this, "Usuario o contraseña incorrectos.", "Error de Autenticación", JOptionPane.ERROR_MESSAGE);
@@ -114,7 +112,6 @@ public class FrmLogin extends JFrame {
 
     // Método Main exclusivo para ejecutar este formulario de manera independiente
     public static void main(String[] args) {
-        // Ejecución segura de hilos de interfaz gráfica en Swing
         SwingUtilities.invokeLater(new Runnable() {
             @Override
             public void run() {
