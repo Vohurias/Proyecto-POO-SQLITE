@@ -1,106 +1,127 @@
 package pe.edu.utp.pcmastertech;
 
 import javax.swing.*;
-import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
 
 public class FrmMenu extends JFrame {
 
-    private JLabel lblBienvenida;
-    private JButton btnCargarUsuarios;
-    private JTable tblUsuarios;
-    private DefaultTableModel modeloTabla;
-    private JScrollPane scrollPane;
+    // Contenedor de la derecha que cambiará de contenido
+    private JPanel pnlContenedorDerecho;
+    private JButton btnInventario, btnProductos, btnCerrarSesion;
+    private JLabel lblStatus;
 
-    // El constructor ahora exige recibir el nombre y rol del usuario logueado
     public FrmMenu(String nombreUsuario, String rolUsuario) {
-        // 1. Configuración básica de la ventana de menú
-        setTitle("Sistema de Inventario - Panel Principal");
-        setSize(700, 500);
+        setTitle("PCMasterTech - Panel de Control");
+        setSize(900, 550); // Ventana más ancha para soportar el flujo lateral
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
-        setLayout(new BorderLayout(10, 10)); // Distribución por zonas (Norte, Centro, Sur)
+        
+        // Usamos BorderLayout para dividir la ventana por regiones cardinales
+        setLayout(new BorderLayout());
 
-        // 2. Encabezado del Menú (Zona Norte)
-        JPanel pnlNorte = new JPanel(new GridLayout(2, 1));
-        pnlNorte.setBackground(new Color(45, 52, 54)); // Un color gris oscuro elegante
+        // =================================================================
+        // 1. PANEL LATERAL IZQUIERDO (Sidebar - Región OESTE)
+        // =================================================================
+        JPanel pnlSidebar = new JPanel();
+        pnlSidebar.setBackground(new Color(45, 52, 54)); // Gris oscuro
+        pnlSidebar.setPreferredSize(new Dimension(230, 550)); // Ancho fijo
+        pnlSidebar.setLayout(new BoxLayout(pnlSidebar, BoxLayout.Y_AXIS)); // Organización vertical
+        pnlSidebar.setBorder(BorderFactory.createEmptyBorder(20, 15, 20, 15));
+
+        // Información de Sesión en el Sidebar
+        JLabel lblUser = new JLabel("<html><b>Usuario:</b><br>" + nombreUsuario + "</html>");
+        lblUser.setForeground(Color.WHITE);
+        lblUser.setFont(new Font("Arial", Font.PLAIN, 13));
         
-        lblBienvenida = new JLabel("¡Bienvenido, " + nombreUsuario + "!", SwingConstants.CENTER);
-        lblBienvenida.setFont(new Font("Arial", Font.BOLD, 16));
-        lblBienvenida.setForeground(Color.WHITE);
-        
-        JLabel lblRol = new JLabel("Rol: " + rolUsuario, SwingConstants.CENTER);
-        lblRol.setFont(new Font("Arial", Font.ITALIC, 13));
+        JLabel lblRol = new JLabel("Permisos: " + rolUsuario);
         lblRol.setForeground(Color.LIGHT_GRAY);
+        lblRol.setFont(new Font("Arial", Font.ITALIC, 11));
+
+        // Botones de Navegación Lateral
+        btnInventario = new JButton("Módulo Inventario");
+        btnProductos = new JButton("Mantenimiento Prod."); // Preparado para agregar/editar después
+        btnCerrarSesion = new JButton("Cerrar Sesión");
+
+        // Ajustamos los tamaños de los botones para que se vean uniformes en el Sidebar
+        btnInventario.setMaximumSize(new Dimension(Integer.MAX_VALUE, 40));
+        btnProductos.setMaximumSize(new Dimension(Integer.MAX_VALUE, 40));
+        btnCerrarSesion.setMaximumSize(new Dimension(Integer.MAX_VALUE, 35));
+
+        // Agregamos los componentes al panel izquierdo dejando espacios verticales
+        pnlSidebar.add(lblUser);
+        pnlSidebar.add(Box.createRigidArea(new Dimension(0, 5)));
+        pnlSidebar.add(lblRol);
+        pnlSidebar.add(Box.createRigidArea(new Dimension(0, 40))); // Espacio separador largo
+        pnlSidebar.add(btnInventario);
+        pnlSidebar.add(Box.createRigidArea(new Dimension(0, 15)));
+        pnlSidebar.add(btnProductos);
+        pnlSidebar.add(Box.createRigidArea(new Dimension(0, 150))); // Espacio empujador
+        pnlSidebar.add(btnCerrarSesion);
+
+        // Insertamos el Sidebar completo a la izquierda de la ventana
+        add(pnlSidebar, BorderLayout.WEST);
+
+        // =================================================================
+        // 2. PANEL CONTENEDOR DERECHO (Región CENTRO)
+        // =================================================================
+        pnlContenedorDerecho = new JPanel(new BorderLayout());
+        pnlContenedorDerecho.setBackground(Color.WHITE);
         
-        pnlNorte.add(lblBienvenida);
-        pnlNorte.add(lblRol);
-        add(pnlNorte, BorderLayout.NORTH);
+        // Vista inicial por defecto (Mensaje de bienvenida central)
+        lblStatus = new JLabel("Seleccione un módulo del menú izquierdo para comenzar.", SwingConstants.CENTER);
+        lblStatus.setFont(new Font("Arial", Font.PLAIN, 14));
+        lblStatus.setForeground(Color.GRAY);
+        pnlContenedorDerecho.add(lblStatus, BorderLayout.CENTER);
 
-        // 3. Estructura de la Tabla de Datos (Zona Centro)
-        // Definimos las columnas idénticas a nuestra estructura en la base de datos
-        String[] columnas = {"DNI", "Nombre Completo", "Nombre Usuario", "Cargo"};
-        modeloTabla = new DefaultTableModel(columnas, 0); // 0 indica que inicia vacía
-        tblUsuarios = new JTable(modeloTabla);
-        scrollPane = new JScrollPane(tblUsuarios); // Permite barras de desplazamiento si hay muchos datos
-        add(scrollPane, BorderLayout.CENTER);
+        // Insertamos el contenedor en el espacio restante de la derecha
+        add(pnlContenedorDerecho, BorderLayout.CENTER);
 
-        // 4. Panel de Acciones/Botones (Zona Sur)
-        JPanel pnlSur = new JPanel(new FlowLayout(FlowLayout.CENTER));
-        btnCargarUsuarios = new JButton("Consultar Usuarios (SELECT * FROM Usuario)");
-        btnCargarUsuarios.setFont(new Font("Arial", Font.BOLD, 12));
-        pnlSur.add(btnCargarUsuarios);
-        add(pnlSur, BorderLayout.SOUTH);
+        // =================================================================
+        // 3. LÓGICA DE INTERCAMBIO DINÁMICO (Eventos de Botones)
+        // =================================================================
 
-        // 5. Escuchador de eventos para el botón de consulta
-        btnCargarUsuarios.addActionListener(new ActionListener() {
+        // Acción al presionar Módulo Inventario (Carga la clase que creamos antes)
+        btnInventario.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                ejecutarConsultaUsuarios();
+                // Instanciamos el panel con la tabla y los filtros superiores
+                PnlInventario panelInv = new PnlInventario();
+                cambiarContenidoPanelDerecho(panelInv);
+            }
+        });
+
+        // Acción al presionar Mantenimiento de Productos (Vacío por ahora)
+        btnProductos.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                // Creamos un panel temporal en blanco para que no rompa el programa
+                JPanel pnlTemporal = new JPanel(new BorderLayout());
+                pnlTemporal.setBackground(Color.WHITE);
+                JLabel lblTemp = new JLabel("Módulo de inserción y edición de productos (Próxima Entrega).", SwingConstants.CENTER);
+                pnlTemporal.add(lblTemp, BorderLayout.CENTER);
+                
+                cambiarContenidoPanelDerecho(pnlTemporal);
+            }
+        });
+
+        // Acción de Salida
+        btnCerrarSesion.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                FrmLogin login = new FrmLogin();
+                login.setVisible(true);
+                dispose();
             }
         });
     }
 
-    // Método paso a paso que conecta la tabla visual con SQLite
-    private void ejecutarConsultaUsuarios() {
-        // Limpiamos la tabla por si ya tenía datos de una consulta previa
-        modeloTabla.setRowCount(0);
-
-        String sql = "SELECT dni, nombre, usuario, cargo FROM Usuario";
-
-        try (Connection cn = Conexion.getConexion();
-             PreparedStatement ps = cn.prepareStatement(sql);
-             ResultSet rs = ps.executeQuery()) {
-
-            // Recorremos las filas que devolvió la base de datos una por una
-            while (rs.next()) {
-                String dni = rs.getString("dni");
-                String nombre = rs.getString("nombre");
-                String usuario = rs.getString("usuario");
-                String cargoRaw = rs.getString("cargo");
-                
-                // Homologamos visualmente el indicador de cargo
-                String cargoReal = cargoRaw.equals("A") ? "Administrador" : "Técnico";
-
-                // Creamos un arreglo de objetos con los datos de esta fila
-                Object[] fila = {dni, nombre, usuario, cargoReal};
-                
-                // Agregamos la fila directamente al modelo visual de la tabla
-                modeloTabla.addRow(fila);
-            }
-
-            if (modeloTabla.getRowCount() == 0) {
-                JOptionPane.showMessageDialog(this, "No se encontraron registros.", "Consulta Vacía", JOptionPane.INFORMATION_MESSAGE);
-            }
-
-        } catch (SQLException ex) {
-            JOptionPane.showMessageDialog(this, "Error al extraer usuarios de SQLite: " + ex.getMessage(), "Error de Datos", JOptionPane.ERROR_MESSAGE);
-        }
+    // El método maestro paso a paso para limpiar y reinsertar paneles dinámicamente
+    private void cambiarContenidoPanelDerecho(JPanel nuevoPanel) {
+        pnlContenedorDerecho.removeAll(); // Borra absolutamente todo lo que esté cargado a la derecha
+        pnlContenedorDerecho.add(nuevoPanel, BorderLayout.CENTER); // Inserta la nueva pieza del rompecabezas
+        pnlContenedorDerecho.revalidate(); // Le dice a Java que recalcule los layouts gráficos
+        pnlContenedorDerecho.repaint(); // Redibuja los píxeles en la pantalla inmediatamente
     }
 }
