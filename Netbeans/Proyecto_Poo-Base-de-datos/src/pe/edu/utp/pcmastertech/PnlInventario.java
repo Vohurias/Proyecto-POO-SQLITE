@@ -14,84 +14,132 @@ public class PnlInventario extends JPanel {
 
     private JTable tblProductos;
     private DefaultTableModel modeloTabla;
-    private JButton btnRefrescar;
+    private JTextField txtBuscar;
+    private JButton btnBuscar, btnVerTodo;
 
     public PnlInventario() {
-        // Configuración visual del panel (Contenido derecho del menú)
         setLayout(new BorderLayout(10, 10));
         setBorder(BorderFactory.createEmptyBorder(15, 15, 15, 15));
         setBackground(Color.WHITE);
 
-        // 1. Título superior
-        JLabel lblTitulo = new JLabel("INVENTARIO GENERAL DE PRODUCTOS", SwingConstants.CENTER);
-        lblTitulo.setFont(new Font("Arial", Font.BOLD, 16));
-        add(lblTitulo, BorderLayout.NORTH);
+        // 1. BARRA DE BÚSQUEDA SUPERIOR
+        JPanel pnlBusqueda = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 5));
+        pnlBusqueda.setBackground(Color.WHITE);
+        pnlBusqueda.setBorder(BorderFactory.createTitledBorder("Buscador Avanzado de Hardware"));
 
-        // 2. Tabla gráfica adaptada a tu esquema real de 9 columnas
+        JLabel lblBuscar = new JLabel("Buscar Producto:");
+        txtBuscar = new JTextField(25);
+        btnBuscar = new JButton("Buscar");
+        btnVerTodo = new JButton("Mostrar Todo");
+
+        pnlBusqueda.add(lblBuscar);
+        pnlBusqueda.add(txtBuscar);
+        pnlBusqueda.add(btnBuscar);
+        pnlBusqueda.add(btnVerTodo);
+
+        add(pnlBusqueda, BorderLayout.NORTH);
+
+        // 2. TABLA DE PRODUCTOS (Modificamos las cabeceras relacionales)
         String[] columnas = {
             "Código", "Marca", "Modelo", "Precio Unit. (S/.)", 
-            "Stock Actual", "Stock Mínimo", "Fecha Ingreso", "Cat. ID", "Prov. ID"
+            "Stock Actual", "Stock Mínimo", "Fecha Ingreso", "Categoría", "Proveedor (Empresa)"
         };
         modeloTabla = new DefaultTableModel(columnas, 0);
         tblProductos = new JTable(modeloTabla);
-        
-        // Hacer que la tabla sea scrolleable horizontalmente si las columnas son anchas
         tblProductos.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
         JScrollPane scrollPane = new JScrollPane(tblProductos);
         add(scrollPane, BorderLayout.CENTER);
 
-        // 3. Botón inferior para ejecutar la consulta
-        btnRefrescar = new JButton("Ejecutar Consulta (SELECT * FROM Producto)");
-        btnRefrescar.setFont(new Font("Arial", Font.BOLD, 12));
-        add(btnRefrescar, BorderLayout.SOUTH);
-
-        // Evento del botón
-        btnRefrescar.addActionListener(new ActionListener() {
+        // 3. EVENTOS DE LOS BOTONES
+        btnBuscar.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                traerTodoElInventario();
+                String palabraABuscar = txtBuscar.getText().trim();
+                if (palabraABuscar.isEmpty()) {
+                    JOptionPane.showMessageDialog(null, "Por favor, escribe algo para buscar.", "Aviso", JOptionPane.WARNING_MESSAGE);
+                } else {
+                    buscarEnInventario(palabraABuscar);
+                }
+            }
+        });
+
+        btnVerTodo.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                txtBuscar.setText("");
+                buscarEnInventario("");
             }
         });
 
         // Carga automática inicial
-        traerTodoElInventario();
+        buscarEnInventario("");
     }
 
-    private void traerTodoElInventario() {
-        modeloTabla.setRowCount(0); // Limpiar datos previos
+    private void buscarEnInventario(String criterio) {
+        modeloTabla.setRowCount(0); // Limpiar la tabla antes de inyectar datos
 
-        String sql = "SELECT * FROM Producto";
+        String sql;
+        
+        // Si el criterio está vacío, ejecutamos el doble INNER JOIN base
+        if (criterio.isEmpty()) {
+            sql = "SELECT P.codigoProducto, P.marca, P.modelo, P.precioUnitario, P.cantidadStock, "
+                + "P.stockMinimo, P.fechaIngreso, C.nombre AS nombreCategoria, Pr.empresa AS nombreProveedor "
+                + "FROM Producto P "
+                + "INNER JOIN Categoria C ON P.categoriaID = C.codigo "
+                + "INNER JOIN Proveedor Pr ON P.proveedorID = Pr.idProveedor";
+        } else {
+            /* Si hay criterio, añadimos un WHERE robusto. 
+               Ahora busca por: Código, Marca, Modelo, Nombre de Categoría o Nombre de Empresa del Proveedor.
+            */
+            sql = "SELECT P.codigoProducto, P.marca, P.modelo, P.precioUnitario, P.cantidadStock, "
+                + "P.stockMinimo, P.fechaIngreso, C.nombre AS nombreCategoria, Pr.empresa AS nombreProveedor "
+                + "FROM Producto P "
+                + "INNER JOIN Categoria C ON P.categoriaID = C.codigo "
+                + "INNER JOIN Proveedor Pr ON P.proveedorID = Pr.idProveedor "
+                + "WHERE P.codigoProducto LIKE ? OR P.marca LIKE ? OR P.modelo LIKE ? "
+                + "OR C.nombre LIKE ? OR Pr.empresa LIKE ?";
+        }
 
         try (Connection cn = Conexion.getConexion();
-             PreparedStatement ps = cn.prepareStatement(sql);
-             ResultSet rs = ps.executeQuery()) {
+             PreparedStatement ps = cn.prepareStatement(sql)) {
 
-            // Recorremos el cursor extrayendo las 9 columnas en orden estricto
-            while (rs.next()) {
-                int codigo = rs.getInt("codigoProducto");
-                String brand = rs.getString("marca");
-                String model = rs.getString("modelo");
-                double precio = rs.getDouble("precioUnitario");
-                int stock = rs.getInt("cantidadStock");
-                int stockMin = rs.getInt("stockMinimo");
-                String fecha = rs.getString("fechaIngreso");
-                int catId = rs.getInt("categoriaID");
-                int provId = rs.getInt("proveedorID");
-
-                // Empaquetamos la fila completa con los 9 elementos
-                Object[] fila = {codigo, brand, model, precio, stock, stockMin, fecha, catId, provId};
-                
-                // Agregamos la fila al modelo de la tabla
-                modeloTabla.addRow(fila);
+            // Inyectamos los comodines si existe un filtro de texto escrito
+            if (!criterio.isEmpty()) {
+                String comodin = "%" + criterio + "%";
+                ps.setString(1, comodin); // P.codigoProducto
+                ps.setString(2, comodin); // P.marca
+                ps.setString(3, comodin); // P.modelo
+                ps.setString(4, comodin); // C.nombre (Categoría)
+                ps.setString(5, comodin); // Pr.empresa (Proveedor)
             }
 
-            if (modeloTabla.getRowCount() == 0) {
-                JOptionPane.showMessageDialog(this, "La tabla Producto está vacía.", "Sin Registros", JOptionPane.INFORMATION_MESSAGE);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    int codigo = rs.getInt("codigoProducto");
+                    String brand = rs.getString("marca");
+                    String model = rs.getString("modelo");
+                    double precio = rs.getDouble("precioUnitario");
+                    int stock = rs.getInt("cantidadStock");
+                    int stockMin = rs.getInt("stockMinimo");
+                    String fecha = rs.getString("fechaIngreso");
+                    
+                    // Extraemos los textos de las consultas en lugar de los IDs numéricos
+                    String nombreCategoria = rs.getString("nombreCategoria"); 
+                    String nombreProveedor = rs.getString("nombreProveedor"); 
+
+                    // Construimos la fila con los datos limpios y legibles
+                    Object[] fila = {codigo, brand, model, precio, stock, stockMin, fecha, nombreCategoria, nombreProveedor};
+                    modeloTabla.addRow(fila);
+                }
+            }
+
+            if (modeloTabla.getRowCount() == 0 && !criterio.isEmpty()) {
+                JOptionPane.showMessageDialog(this, "No se encontraron productos para: '" + criterio + "'", "Sin Resultados", JOptionPane.INFORMATION_MESSAGE);
             }
 
         } catch (SQLException ex) {
             ex.printStackTrace();
-            JOptionPane.showMessageDialog(this, "Error de SQLite: " + ex.getMessage(), "Fallo en Consulta", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(this, "Error en la consulta relacional (Doble JOIN):\n" + ex.getMessage(), "Error SQL", JOptionPane.ERROR_MESSAGE);
         }
     }
 }
