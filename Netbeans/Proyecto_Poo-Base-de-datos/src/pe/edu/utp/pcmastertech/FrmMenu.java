@@ -41,7 +41,7 @@ public class FrmMenu extends JFrame {
 
         // Botones de Navegación Lateral
         btnInventario = new JButton("Módulo Inventario");
-        btnProductos = new JButton("Mantenimiento Prod."); // Preparado para agregar/editar después
+        btnProductos = new JButton("Gestión de Productos");
         btnCerrarSesion = new JButton("Cerrar Sesión");
 
         // Ajustamos los tamaños de los botones para que se vean uniformes en el Sidebar
@@ -96,13 +96,9 @@ public class FrmMenu extends JFrame {
         btnProductos.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                // Creamos un panel temporal en blanco para que no rompa el programa
-                JPanel pnlTemporal = new JPanel(new BorderLayout());
-                pnlTemporal.setBackground(Color.WHITE);
-                JLabel lblTemp = new JLabel("Módulo de inserción y edición de productos (Próxima Entrega).", SwingConstants.CENTER);
-                pnlTemporal.add(lblTemp, BorderLayout.CENTER);
+                PnlMantenimiento panelMan = new PnlMantenimiento();
+                cambiarContenidoPanelDerecho(panelMan);
                 
-                cambiarContenidoPanelDerecho(pnlTemporal);
             }
         });
 

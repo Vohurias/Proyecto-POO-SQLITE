@@ -8,6 +8,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import javax.swing.JOptionPane;
 import pe.edu.utp.pcmastertech.Conexion;
 
 public class inventario implements Gestion {
@@ -15,11 +16,32 @@ public class inventario implements Gestion {
     // El atributo "-conexion" simulado mediante nuestra clase de acceso
     public inventario() {}
 
-    @Override
-    public boolean agregarProducto(Productos p) {
-        // Lógica de inserción que completaremos en el siguiente paso
+@Override
+public boolean agregarProducto(Productos p) {
+    String sql = "INSERT INTO Producto (codigoProducto, marca, modelo, precioUnitario, cantidadStock, stockMinimo, fechaIngreso, categoriaID, proveedorID) "
+               + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
+
+    try (Connection cn = Conexion.getConexion();
+         PreparedStatement ps = cn.prepareStatement(sql)) {
+
+        ps.setInt(1, Integer.parseInt(p.getCodigo()));
+        ps.setString(2, p.getMarca());
+        ps.setString(3, p.getModelo());
+        ps.setDouble(4, p.getPrecioUnitario());
+        ps.setInt(5, p.getCantidadStock());
+        ps.setInt(6, p.getStockMinimo());
+        ps.setString(7, p.getFechaIngreso());
+        ps.setInt(8, Integer.parseInt(p.getNombreCategoria())); // Aquí viajará el ID extraído del combo
+        ps.setInt(9, Integer.parseInt(p.getNombreProveedor()));  // Aquí viajará el ID extraído del combo
+
+        return ps.executeUpdate() > 0;
+
+    } catch (SQLException ex) {
+        ex.printStackTrace();
+        JOptionPane.showMessageDialog(null, "Error al insertar en la base de datos:\n" + ex.getMessage(), "Error SQL", JOptionPane.ERROR_MESSAGE);
         return false;
     }
+}
 
     @Override
     public boolean modificarProducto(Productos p) {
@@ -86,6 +108,37 @@ public class inventario implements Gestion {
                     p.setNombreProveedor(rs.getString("nombreProveedor"));
                     lista.add(p);
                 }
+            }
+        } catch (SQLException ex) {
+            ex.printStackTrace();
+        }
+        return lista;
+    }
+    // Método para obtener todas las categorías de la BD en formato de texto para el ComboBox
+public java.util.List<String> obtenerNombresCategorias() {
+    java.util.List<String> lista = new ArrayList<>();
+    String sql = "SELECT codigo || ' - ' || nombre AS item FROM Categoria";
+    try (Connection cn = Conexion.getConexion();
+         PreparedStatement ps = cn.prepareStatement(sql);
+         ResultSet rs = ps.executeQuery()) {
+        while (rs.next()) {
+            lista.add(rs.getString("item"));
+        }
+    } catch (SQLException ex) {
+        ex.printStackTrace();
+    }
+    return lista;
+}
+
+    // Método para obtener todos los proveedores de la BD en formato de texto para el ComboBox
+    public java.util.List<String> obtenerNombresProveedores() {
+        java.util.List<String> lista = new ArrayList<>();
+        String sql = "SELECT idProveedor || ' - ' || empresa AS item FROM Proveedor";
+        try (Connection cn = Conexion.getConexion();
+             PreparedStatement ps = cn.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+            while (rs.next()) {
+                lista.add(rs.getString("item"));
             }
         } catch (SQLException ex) {
             ex.printStackTrace();
